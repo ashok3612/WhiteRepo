@@ -1,0 +1,185 @@
+Controller Overview
+
+Zend_Controller_Front:
+•	Zend_Controller_Front manage the entire workflow of the Zend_Controller system.
+•	Zend_Controller_Front processes all requests received by the server and is ultimately responsible for represent requests to ActionControllers (Zend_Controller_Action).
+Zend_Controller_Request_Abstract:
+•	Zend_Controller_Request_Abstract represents the request environment and provides methods for setting and retrieving the controller and action names and any request parameters.
+Zend_Controller_Router_Interface:
+•	Routing is the process of examining the request environment to determine which controller, and action of that controller, should receive the request.
+•	Zend_Controller_Router_Interface is used to define routers.
+•	Routing occurs only once, when the request is initially received and before the first controller is dispatched.
+•	The default router, Zend_Controller_Router_Rewrite, takes a URI endpoint as specified in Zend_Controller_Request_Http and decomposes it into a controller, action, and parameters based on the path information in the URL.
+Zend_Controller_Dispatcher_Interface:
+•	Zend_Controller_Dispatcher_Interface is used to define dispatchers.
+•	Dispatching is the process of taking the request object, Zend_Controller_Request_Abstract, extracting the module name, controller name, action name, and optional parameters contained in it, and then instantiating a controller and calling an action of that controller.
+•	If any of the module, controller, or action are not found, it will use default values for them.
+•	Zend_Controller_Dispatcher_Standard specifies index for each of the controller and action defaults, but allows the developer to change the default values for each using the setDefaultController(), setDefaultAction(), and setDefaultModule() methods, respectively.
+Zend_Controller_Action:
+•	Zend_Controller_Action is the base action controller component.
+•	Each controller is a single class that extends the Zend_Controller_Action class and should contain one or more action methods.
+Zend_Controller_Response_Abstract:
+•	Zend_Controller_Response_Abstract is used to return response to the view and it collect both body and header contents.
+•	The default response class is Zend_Controller_Response_Http, which is suitable for use in an HTTP environment.
+The Front Controller
+Zend_Controller_Front purpose is to initialize the request environment, route the incoming request, and then dispatch any discovered actions.
+	In Zend_Controller_Front only a single instance of it may be available at any given time.
+Zend_Controller_Front registers a plugin broker with itself, allowing various events it triggers to be observed by plugins. By default, the front controller loads the ErrorHandler plugin, as well as the ViewRenderer action helper plugin. To disable the ErrorHandler, perform the following at any point prior to calling dispatch(). 
+$front->setParam('noErrorHandler', true);
+$front->setParam('noViewRenderer', true);
+
+Primary Methods
+getInstance() :
+getInstance() is used to retrieve a front controller instance.
+$front = Zend_Controller_Front::getInstance();
+setControllerDirectory() :
+setControllerDirectory() is used to tell the dispatcher where to look for action controller class files.
+$front->setControllerDirectory('../application/controllers');
+ 
+$front->setControllerDirectory(array(
+  'default' => '../application/controllers'
+  'blog'    => '../modules/blog/controllers',
+  'news'    => '../modules/news/controllers',
+));
+addModuleDirectory()
+getModuleDirectory()
+dispatch() :
+		  dispatch(
+Zend_Controller_Request_Abstract $request,
+Zend_Controller_Response_Abstract $response
+);
+		Both request and response objects are optional.
+		The dispatch process has three distinct events:
+•	Routing
+•	Dispatching
+•	Response
+run() :
+		Simply it fetches a front controller instance, registers the path provided via setControllerDirectory(), and finally dispatches.
+
+Zend_Controller_Front::run('../application/controllers');
+
+Environmental Accessor Methods
+	
+•	resetInstance()
+•	setDefaultControllerName()
+•	getDefaultControllerName()
+•	setDefaultAction()
+•	getDefaultAction()
+•	setRequest()
+•	setResponse()
+•	setDispatcher()
+•	setRouter()
+Front Controller Parameters
+•	setParams(array $params)
+•	setParam($name, $value)
+•	getParam($name)
+•	getParams()
+•	clearParams()
+
+Extending the Front Controller
+
+class My_Controller_Front extends Zend_Controller_Front
+{
+    public static function getInstance()
+    {
+        if (null === self::$_instance) {
+            self::$_instance = new self();
+        }
+        return self::$_instance;
+    }
+}
+
+
+Overriding the getInstance() method ensures that subsequent calls to Zend_Controller_Front::getInstance() will return an instance of your new subclass instead of a Zend_Controller_Front instance
+
+
+
+
+
+The Request Object
+The request object is passed between Zend_Controller_Front and the router, dispatcher, and controller classes.
+•	The module name is accessed by getModuleName() and setModuleName().
+•	The controller name is accessed by getControllerName() and setControllerName().
+•	The name of the action to call within that controller is accessed by getActionName() and setActionName().
+HTTP Requests - Accessing Request Data
+	Zend_Controller_Request_Http used to access to all values such as the key name and value for the controller and action router variables, and all additional parameters parsed from the URI.
+Determining the Request Method
+	getMethod() allows you to determine the HTTP request method used to request the current resource.
+	There is many other methods to get values from the request,
+•  isGet()
+•  isPost()
+•  isPut()
+
+
+
+
+
+
+
+
+
+
+The Standard Router
+
+Zend_Controller_Router_Rewrite is the standard framework router and Routing occurs only once before dispatch.
+Routing is the process of taking a URI endpointand decomposing it into parameters to determine which module, controller, and action of that controller should receive the request.
+This values of the module, controller, action and other parameters are packaged into a Zend_Controller_Request_Http object.
+  Module + controller + action + params:
+  http://example/blog/archive/list/sort/alpha/date/desc
+
+
+
+Using a Router ( Create ):
+
+$router = $ctrl->getRouter(); // returns a rewrite router by default
+$router->addRoute(
+'user',
+new Zend_Controller_Router_Route('user/:username',
+array('controller' => 'user',
+'action' => 'info'))
+);
+Types of routes:
+•  Zend_Controller_Router_Route 
+•  Zend_Controller_Router_Route_Static 
+•  Zend_Controller_Router_Route_Regex 
+•  Zend_Controller_Router_Route_Hostname 
+•  Zend_Controller_Router_Route_Chain 
+•  Zend_Controller_Router_Rewrite 
+
+The Dispatcher
+Dispatching is the process of taking the request object, Zend_Controller_Request_Abstract, extracting the module name, controller name, action name, and optional parameters contained in it, and then instantiating a controller and calling an action of that controller.
+If any of the module, controller, or action are not found, it will use default values for them. Zend_Controller_Dispatcher_Standard specifies index for each of the controller and action defaults and default for the module default value, but allows the developer to change the default values for each using the setDefaultController(), setDefaultAction(), and setDefaultModule() methods, respectively.
+
+1.	public function oneAction()
+2.	{
+3.	$this->_forward('main', null, null, array('baz' => 'bogus'));
+4.	}
+
+5.	public function twoAction()
+6.	{
+7.	$this->_forward('main', 'sub', null, array('baz' => 'bogus'));
+8.	}
+
+9.	public function threeAction()
+10.	{
+11.	$this->_forward('main', 'sub', 'tag', array('baz' => 'bogus'));
+12.	}
+Zend_Controller_Dispatcher_Interface:
+Zend_Controller_Dispatcher_Interface defines the following methods as required for any dispatcher implementation:
+•	isDispatchable()
+•	setParam()
+•	getParam()
+•	clearParams()
+•	setResponse()
+
+
+
+
+
+Action Controllers
+
+
+
+
+
+
